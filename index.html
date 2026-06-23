@@ -1,1 +1,619 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>THE BRIDGE · 오늘의 정산</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" as="style" crossorigin
+      href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  :root{
+    --bg-dark:#05070a;
+    --felt-green:#0a3d31;
+    --gold:#d4af37;
+    --gold-light:#f1d592;
+    --neon-green:#2ecc71;
+    --red:#ff3b30;
+    --yellow:#ffd700;
+  }
 
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+
+  body{
+    font-family:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,
+                "Segoe UI",Roboto,"Helvetica Neue","Apple SD Gothic Neo",sans-serif;
+    background:
+      radial-gradient(ellipse at top,#0c1118 0%,var(--bg-dark) 55%,#020304 100%);
+    color:#e8e8e8;
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+    padding-bottom:48px;
+  }
+
+  .wrap{
+    max-width:480px;
+    margin:0 auto;
+    padding:0 18px;
+  }
+
+  /* ── HEADER ───────────────────────────── */
+  header{
+    text-align:center;
+    padding:30px 0 14px;
+  }
+  .location{
+    font-size:11px;
+    letter-spacing:4px;
+    color:var(--gold);
+    opacity:.75;
+    font-weight:600;
+  }
+  .brand{
+    font-size:clamp(40px,13vw,58px);
+    font-weight:900;
+    letter-spacing:2px;
+    margin:6px 0 4px;
+    background:linear-gradient(180deg,var(--gold-light),var(--gold) 55%,#a37f1d);
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+    animation:glow 2.8s ease-in-out infinite;
+  }
+  @keyframes glow{
+    0%,100%{filter:drop-shadow(0 0 4px rgba(212,175,55,.35));}
+    50%{filter:drop-shadow(0 0 16px rgba(212,175,55,.85));}
+  }
+  .subtitle{
+    font-size:13px;
+    letter-spacing:3px;
+    color:#9fb0a8;
+    text-transform:uppercase;
+  }
+  .subtitle b{color:var(--gold-light);font-weight:700;}
+
+  /* ── BILLIARD TABLE (static decoration) ─── */
+  .table-container{
+    margin:18px auto 26px;
+    position:relative;
+    width:100%;
+    aspect-ratio:2/1;
+    border-radius:18px;
+    background:
+      linear-gradient(160deg,#103f33,var(--felt-green) 60%,#072a22);
+    border:7px solid #5a3d1f;
+    box-shadow:
+      0 0 0 3px #2a1d0e,
+      inset 0 0 40px rgba(0,0,0,.55),
+      0 14px 40px rgba(0,0,0,.6);
+    overflow:hidden;
+  }
+  .table-container::before{
+    /* felt sheen */
+    content:"";
+    position:absolute;inset:0;
+    background:radial-gradient(ellipse at 50% 0%,rgba(255,255,255,.06),transparent 60%);
+  }
+  .pocket{
+    position:absolute;width:18px;height:18px;border-radius:50%;
+    background:radial-gradient(circle at 30% 30%,#222,#000);
+    box-shadow:inset 0 0 4px #000;
+  }
+  .pocket.tl{top:6px;left:6px}.pocket.tr{top:6px;right:6px}
+  .pocket.bl{bottom:6px;left:6px}.pocket.br{bottom:6px;right:6px}
+  .pocket.tm{top:4px;left:50%;transform:translateX(-50%)}
+  .pocket.bm{bottom:4px;left:50%;transform:translateX(-50%)}
+  .ball{
+    position:absolute;width:22px;height:22px;border-radius:50%;
+    box-shadow:inset -4px -5px 7px rgba(0,0,0,.55),0 3px 6px rgba(0,0,0,.5);
+  }
+  .ball::after{
+    content:"";position:absolute;top:3px;left:5px;width:7px;height:6px;
+    border-radius:50%;background:rgba(255,255,255,.55);
+  }
+  .ball.white{background:radial-gradient(circle at 35% 30%,#fff,#cfcfcf);
+    top:52%;left:24%}
+  .ball.red{background:radial-gradient(circle at 35% 30%,#ff6a5e,var(--red));
+    top:40%;left:55%}
+  .ball.yellow{background:radial-gradient(circle at 35% 30%,#fff07a,var(--yellow));
+    top:60%;left:68%}
+  .cue-line{
+    position:absolute;top:52%;left:24%;width:46%;height:2px;
+    transform:translateY(8px) rotate(-9deg);transform-origin:left center;
+    background:linear-gradient(90deg,rgba(212,175,55,0),rgba(212,175,55,.6));
+  }
+  .table-label{
+    position:absolute;bottom:8px;left:50%;transform:translateX(-50%);
+    font-size:10px;letter-spacing:3px;color:rgba(241,213,146,.5);font-weight:700;
+  }
+
+  /* ── SECTIONS ─────────────────────────── */
+  section{margin-bottom:28px;}
+  .section-title{
+    font-size:15px;font-weight:800;color:var(--gold-light);
+    letter-spacing:1px;margin:0 0 4px;
+    display:flex;align-items:center;gap:8px;
+  }
+  .section-title .num{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:22px;height:22px;border-radius:50%;
+    background:var(--gold);color:#1a1206;font-size:12px;font-weight:900;
+  }
+  .hint{font-size:12px;color:#8a978f;margin:0 0 12px;}
+
+  /* ── MEMBER CHIPS ─────────────────────── */
+  .roster-count{
+    text-align:center;font-size:13px;color:#aebcb4;margin:0 0 12px;
+  }
+  .roster-count b{color:var(--neon-green);font-size:17px;font-weight:900;}
+
+  .chip-grid{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:9px;
+  }
+  .member-chip{
+    position:relative;
+    padding:13px 6px;
+    border-radius:14px;
+    border:1.5px solid rgba(46,204,113,.55);
+    background:rgba(46,204,113,.10);
+    color:#eafff3;
+    font-size:13px;font-weight:700;
+    text-align:center;
+    cursor:pointer;
+    transition:transform .08s ease,background .18s,border-color .18s,color .18s,opacity .18s;
+    user-select:none;
+    line-height:1.25;
+    overflow:hidden;text-overflow:ellipsis;
+  }
+  .member-chip::before{
+    content:"✓";margin-right:4px;font-weight:900;color:var(--neon-green);
+  }
+  .member-chip:active{transform:scale(.93);}
+  .member-chip.out{
+    border-color:rgba(150,150,150,.4);
+    background:rgba(120,120,120,.10);
+    color:#777;
+    text-decoration:line-through;
+    opacity:.65;
+  }
+  .member-chip.out::before{content:"✕";color:#888;}
+
+  /* ── EXPENSE ROWS ─────────────────────── */
+  .expense-row{
+    display:flex;gap:8px;align-items:center;margin-bottom:9px;
+  }
+  .expense-row input{
+    background:rgba(255,255,255,.04);
+    border:1.5px solid rgba(212,175,55,.28);
+    border-radius:12px;
+    color:#f4f4f4;
+    padding:12px 13px;
+    font-size:14px;
+    font-family:inherit;
+    transition:border-color .18s,background .18s;
+    width:100%;
+    min-width:0;
+  }
+  .expense-row input:focus{
+    outline:none;border-color:var(--gold);background:rgba(212,175,55,.06);
+  }
+  .expense-row .item-name{flex:1.3;}
+  .expense-row .item-amount{
+    flex:1;text-align:right;
+    font-family:"JetBrains Mono","SF Mono",ui-monospace,Menlo,Consolas,monospace;
+    letter-spacing:.5px;
+  }
+  .del-btn{
+    flex:0 0 auto;
+    width:34px;height:34px;border-radius:10px;border:none;
+    background:rgba(255,59,48,.12);color:var(--red);
+    font-size:18px;line-height:1;cursor:pointer;
+    transition:transform .08s,background .18s;
+  }
+  .del-btn:active{transform:scale(.9);}
+
+  .add-btn{
+    width:100%;margin-top:4px;
+    padding:11px;border-radius:12px;
+    border:1.5px dashed rgba(212,175,55,.5);
+    background:transparent;color:var(--gold-light);
+    font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;
+    transition:transform .08s,background .18s;
+  }
+  .add-btn:active{transform:scale(.97);}
+  .add-btn:hover{background:rgba(212,175,55,.06);}
+
+  .total-line{
+    display:flex;justify-content:space-between;align-items:baseline;
+    margin-top:16px;padding-top:14px;
+    border-top:1px solid rgba(212,175,55,.25);
+  }
+  .total-line span{font-size:14px;color:#aebcb4;font-weight:600;}
+  .total-line .amt{
+    font-family:"JetBrains Mono","SF Mono",ui-monospace,Menlo,Consolas,monospace;
+    font-size:22px;font-weight:900;color:var(--gold);letter-spacing:.5px;
+  }
+
+  /* ── ACCOUNT FIELD ────────────────────── */
+  .account-field{margin-top:6px;}
+  .account-field label{
+    display:block;font-size:13px;color:#aebcb4;margin-bottom:6px;font-weight:600;
+  }
+  .account-field input{
+    width:100%;background:rgba(255,255,255,.04);
+    border:1.5px solid rgba(212,175,55,.28);border-radius:12px;
+    color:#f4f4f4;padding:12px 13px;font-size:14px;font-family:inherit;
+  }
+  .account-field input:focus{outline:none;border-color:var(--gold);}
+
+  /* ── MAIN BUTTON ──────────────────────── */
+  .main-btn{
+    width:100%;
+    padding:17px;
+    border:none;border-radius:60px;
+    background:linear-gradient(135deg,var(--gold-light),var(--gold) 55%,#b8901f);
+    color:#1a1206;
+    font-size:17px;font-weight:900;letter-spacing:1px;
+    font-family:inherit;
+    cursor:pointer;
+    box-shadow:0 8px 22px rgba(212,175,55,.35);
+    transition:transform .1s ease,box-shadow .18s;
+  }
+  .main-btn:active{transform:scale(.96);box-shadow:0 4px 12px rgba(212,175,55,.3);}
+
+  /* ── RESULT CARD (.match-card) ────────── */
+  .match-card{
+    margin-top:24px;
+    background:linear-gradient(160deg,rgba(20,28,24,.95),rgba(8,12,10,.97));
+    border:2px solid var(--gold);
+    border-radius:20px;
+    padding:26px 22px 22px;
+    box-shadow:0 0 28px rgba(212,175,55,.22),inset 0 0 22px rgba(0,0,0,.5);
+    animation:cardAppear .55s cubic-bezier(.2,.9,.25,1.2);
+  }
+  @keyframes cardAppear{
+    0%{opacity:0;transform:translateY(28px) scale(.94);}
+    100%{opacity:1;transform:translateY(0) scale(1);}
+  }
+  .card-eyebrow{
+    text-align:center;font-size:11px;letter-spacing:4px;
+    color:var(--gold);opacity:.8;font-weight:700;margin-bottom:6px;
+  }
+  .per-person-label{text-align:center;font-size:13px;color:#aebcb4;margin-bottom:2px;}
+  .per-person{
+    text-align:center;
+    font-family:"JetBrains Mono","SF Mono",ui-monospace,Menlo,Consolas,monospace;
+    font-size:clamp(44px,15vw,62px);font-weight:900;
+    background:linear-gradient(180deg,var(--gold-light),var(--gold));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    line-height:1.05;
+    margin:2px 0 4px;
+  }
+  .per-person small{font-size:.4em;font-weight:700;color:var(--gold);
+    -webkit-text-fill-color:var(--gold);}
+  .remainder-note{
+    text-align:center;font-size:12px;color:var(--yellow);margin-bottom:18px;
+  }
+  .stat-rows{
+    border-top:1px solid rgba(212,175,55,.2);
+    border-bottom:1px solid rgba(212,175,55,.2);
+    padding:12px 0;margin-bottom:16px;
+  }
+  .stat-rows div{
+    display:flex;justify-content:space-between;font-size:14px;padding:5px 0;
+  }
+  .stat-rows .k{color:#9fb0a8;}
+  .stat-rows .v{font-weight:800;color:#f0f0f0;
+    font-family:"JetBrains Mono","SF Mono",ui-monospace,monospace;}
+  .stat-rows .v.absent{font-family:inherit;color:#cf8a84;font-weight:700;
+    text-align:right;max-width:62%;}
+
+  .share-box{
+    background:rgba(0,0,0,.4);
+    border:1px solid rgba(212,175,55,.25);
+    border-radius:12px;
+    padding:13px 14px;
+    font-size:12.5px;line-height:1.7;color:#cfd8d2;
+    white-space:pre-wrap;word-break:break-all;
+    margin-bottom:12px;
+  }
+  .copy-btn{
+    width:100%;padding:13px;border-radius:14px;border:1.5px solid var(--neon-green);
+    background:rgba(46,204,113,.12);color:var(--neon-green);
+    font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;
+    transition:transform .08s,background .2s,color .2s;
+  }
+  .copy-btn:active{transform:scale(.97);}
+  .copy-btn.done{background:var(--neon-green);color:#04140b;}
+
+  .warn{
+    text-align:center;color:var(--red);font-size:14px;font-weight:700;
+    background:rgba(255,59,48,.08);border:1px solid rgba(255,59,48,.35);
+    border-radius:14px;padding:16px;margin-top:24px;
+    animation:cardAppear .4s ease;
+  }
+
+  /* ── FOOTER ───────────────────────────── */
+  footer{
+    text-align:center;font-size:10.5px;line-height:1.7;
+    color:#5f6b64;letter-spacing:.5px;margin-top:36px;
+  }
+  footer .line1{color:var(--gold);opacity:.6;font-weight:700;letter-spacing:2px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="location">GWANGJU, SOUTH KOREA</div>
+    <h1 class="brand">THE BRIDGE</h1>
+    <div class="subtitle">Settlement / <b>오늘의 정산</b></div>
+  </header>
+
+  <!-- 분위기용 정적 당구대 -->
+  <div class="table-container" aria-hidden="true">
+    <div class="pocket tl"></div><div class="pocket tr"></div>
+    <div class="pocket tm"></div><div class="pocket bm"></div>
+    <div class="pocket bl"></div><div class="pocket br"></div>
+    <div class="cue-line"></div>
+    <div class="ball white"></div>
+    <div class="ball red"></div>
+    <div class="ball yellow"></div>
+    <div class="table-label">3-CUSHION</div>
+  </div>
+
+  <!-- ① 참석자 선택 -->
+  <section>
+    <h2 class="section-title"><span class="num">1</span> 참석자 선택</h2>
+    <p class="hint">※ 불참 회원은 이름을 눌러 제외하세요</p>
+    <div class="roster-count">참석 <b id="attendCount">0</b>명</div>
+    <div class="chip-grid" id="chipGrid"></div>
+  </section>
+
+  <!-- ② 지출 입력 -->
+  <section>
+    <h2 class="section-title"><span class="num">2</span> 지출 입력</h2>
+    <p class="hint">항목명과 금액을 입력하세요. 금액은 자동으로 콤마가 붙습니다.</p>
+    <div id="expenseList"></div>
+    <button class="add-btn" id="addRow">+ 항목 추가</button>
+    <div class="total-line">
+      <span>총 지출액</span>
+      <span class="amt" id="totalAmt">0원</span>
+    </div>
+  </section>
+
+  <!-- 입금 계좌 -->
+  <section>
+    <h2 class="section-title"><span class="num">3</span> 입금 계좌</h2>
+    <div class="account-field">
+      <label for="account">정산 입금 계좌 (공유 텍스트에 포함됩니다)</label>
+      <input type="text" id="account" placeholder="예) 카카오뱅크 3333-00-0000000 백사6000"
+             autocomplete="off">
+    </div>
+  </section>
+
+  <button class="main-btn" id="calcBtn">정산하기 🎱</button>
+
+  <div id="resultArea"></div>
+
+  <footer>
+    <div class="line1">© 2025 THE BRIDGE BILLIARDS CLUB</div>
+    <div>모든 권한은 더 브릿지 회원님들께 있습니다.</div>
+  </footer>
+
+</div>
+
+<script>
+/* ════════ 회원 명단 (수정 가능) ════════ */
+const members = ["백사6000","려리","kbh5111","발칸VULCAN","지교","무등산1329",
+                 "입석대","케이574","그렌다이저","SMG","도유나가즈아","메롱상태"];
+
+/* 기본 지출 항목 */
+const DEFAULT_ITEMS = ["게임비","식대","음료·주류"];
+
+/* ════════ 상태 ════════ */
+const attendance = {};               // name -> true(참석)/false(불참)
+members.forEach(m => attendance[m] = true);
+
+/* ════════ DOM ════════ */
+const chipGrid    = document.getElementById('chipGrid');
+const attendCount = document.getElementById('attendCount');
+const expenseList = document.getElementById('expenseList');
+const totalAmt    = document.getElementById('totalAmt');
+const accountInput= document.getElementById('account');
+const resultArea  = document.getElementById('resultArea');
+
+/* ════════ 유틸 ════════ */
+const fmt = n => n.toLocaleString('ko-KR');           // 천 단위 콤마
+const onlyDigits = s => (s.replace(/[^\d]/g,'') || '');
+const parseAmt = s => parseInt(onlyDigits(s) || '0', 10);
+
+/* ════════ ① 회원 칩 ════════ */
+function renderChips(){
+  chipGrid.innerHTML = '';
+  members.forEach(name => {
+    const chip = document.createElement('div');
+    chip.className = 'member-chip' + (attendance[name] ? '' : ' out');
+    chip.textContent = name;
+    chip.addEventListener('click', () => {
+      attendance[name] = !attendance[name];
+      chip.classList.toggle('out', !attendance[name]);
+      updateCount();
+    });
+    chipGrid.appendChild(chip);
+  });
+  updateCount();
+}
+function getAttendees(){ return members.filter(m => attendance[m]); }
+function getAbsentees(){ return members.filter(m => !attendance[m]); }
+function updateCount(){ attendCount.textContent = getAttendees().length; }
+
+/* ════════ ② 지출 행 ════════ */
+function addExpenseRow(name='', amount=''){
+  const row = document.createElement('div');
+  row.className = 'expense-row';
+
+  const nameInput = document.createElement('input');
+  nameInput.type = 'text';
+  nameInput.className = 'item-name';
+  nameInput.placeholder = '항목명';
+  nameInput.value = name;
+
+  const amtInput = document.createElement('input');
+  amtInput.type = 'text';
+  amtInput.inputMode = 'numeric';
+  amtInput.className = 'item-amount';
+  amtInput.placeholder = '0';
+  amtInput.value = amount ? fmt(parseAmt(String(amount))) : '';
+  amtInput.addEventListener('input', () => {
+    const v = parseAmt(amtInput.value);
+    amtInput.value = v ? fmt(v) : '';
+    updateTotal(); saveState();
+  });
+
+  nameInput.addEventListener('input', saveState);
+
+  const del = document.createElement('button');
+  del.className = 'del-btn';
+  del.type = 'button';
+  del.innerHTML = '&times;';
+  del.addEventListener('click', () => { row.remove(); updateTotal(); saveState(); });
+
+  row.append(nameInput, amtInput, del);
+  expenseList.appendChild(row);
+}
+
+function getExpenses(){
+  return [...expenseList.querySelectorAll('.expense-row')].map(r => ({
+    name: r.querySelector('.item-name').value.trim(),
+    amount: parseAmt(r.querySelector('.item-amount').value)
+  }));
+}
+function getTotal(){ return getExpenses().reduce((s,e)=>s+e.amount,0); }
+function updateTotal(){ totalAmt.textContent = fmt(getTotal()) + '원'; }
+
+/* ════════ localStorage ════════ */
+const LS_KEY = 'bridge_settlement_v1';
+function saveState(){
+  try{
+    localStorage.setItem(LS_KEY, JSON.stringify({
+      expenses: getExpenses(),
+      account: accountInput.value
+    }));
+  }catch(e){}
+}
+function loadState(){
+  let data = null;
+  try{ data = JSON.parse(localStorage.getItem(LS_KEY)); }catch(e){}
+  if(data && Array.isArray(data.expenses) && data.expenses.length){
+    data.expenses.forEach(e => addExpenseRow(e.name, e.amount));
+  }else{
+    DEFAULT_ITEMS.forEach(n => addExpenseRow(n, ''));
+  }
+  if(data && typeof data.account === 'string') accountInput.value = data.account;
+}
+accountInput.addEventListener('input', saveState);
+
+/* ════════ ③ 정산 ════════ */
+function todayStr(){
+  const d = new Date();
+  const p = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`;
+}
+
+function calculate(){
+  const attendees = getAttendees();
+  const n = attendees.length;
+  const total = getTotal();
+
+  if(n === 0){
+    resultArea.innerHTML =
+      `<div class="warn">⚠️ 참석자가 없습니다.<br>최소 1명 이상을 선택해 주세요.</div>`;
+    resultArea.scrollIntoView({behavior:'smooth',block:'center'});
+    return;
+  }
+  if(total <= 0){
+    resultArea.innerHTML =
+      `<div class="warn">⚠️ 지출 금액을 입력해 주세요.</div>`;
+    resultArea.scrollIntoView({behavior:'smooth',block:'center'});
+    return;
+  }
+
+  // 1인당 = 총지출 ÷ 참석자 수 (반올림, 정수 원)
+  const perPerson = Math.round(total / n);
+  // 잔여 차액: 실제 수금(perPerson×n) - 총지출
+  const collected = perPerson * n;
+  const remainder = collected - total;   // +면 초과 수금, -면 부족
+
+  const absentees = getAbsentees();
+  const absentText = absentees.length ? absentees.join(', ') : '없음';
+  const account = accountInput.value.trim() || '(미입력)';
+
+  let remNote = '딱 나누어떨어집니다 (잔돈 0원)';
+  if(remainder > 0)
+    remNote = `1인당 반올림으로 ${fmt(remainder)}원 더 걷힙니다 (총 +${fmt(remainder)}원)`;
+  else if(remainder < 0)
+    remNote = `1인당 반올림으로 ${fmt(-remainder)}원 모자랍니다 (총 ${fmt(remainder)}원)`;
+
+  const shareText =
+`🎱 더 브릿지 정산 (${todayStr()})
+총 지출: ${fmt(total)}원 / 참석 ${n}명 / 1인당: ${fmt(perPerson)}원
+불참: ${absentText}
+입금계좌: ${account}`;
+
+  resultArea.innerHTML = `
+    <div class="match-card">
+      <div class="card-eyebrow">SETTLEMENT RESULT</div>
+      <div class="per-person-label">1인당 부담액</div>
+      <div class="per-person">${fmt(perPerson)}<small>원</small></div>
+      <div class="remainder-note">${remNote}</div>
+      <div class="stat-rows">
+        <div><span class="k">총 지출액</span><span class="v">${fmt(total)}원</span></div>
+        <div><span class="k">참석 인원</span><span class="v">${n}명</span></div>
+        <div><span class="k">실수금 합계</span><span class="v">${fmt(collected)}원</span></div>
+        <div><span class="k">불참 (${absentees.length}명)</span><span class="v absent">${absentText}</span></div>
+      </div>
+      <div class="share-box" id="shareBox">${shareText.replace(/</g,'&lt;')}</div>
+      <button class="copy-btn" id="copyBtn">📋 카카오톡 공유 텍스트 복사</button>
+    </div>`;
+
+  document.getElementById('copyBtn').addEventListener('click', e => {
+    copyShare(shareText, e.currentTarget);
+  });
+
+  saveState();
+  resultArea.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function copyShare(text, btn){
+  const done = () => {
+    btn.classList.add('done');
+    const orig = btn.textContent;
+    btn.textContent = '✓ 복사되었습니다';
+    setTimeout(()=>{ btn.classList.remove('done'); btn.textContent = orig; }, 1800);
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(done).catch(()=>fallbackCopy(text,done));
+  }else{
+    fallbackCopy(text, done);
+  }
+}
+function fallbackCopy(text, done){
+  const ta = document.createElement('textarea');
+  ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand('copy'); done(); }catch(e){}
+  document.body.removeChild(ta);
+}
+
+/* ════════ 초기화 ════════ */
+document.getElementById('addRow').addEventListener('click', () => { addExpenseRow(); });
+document.getElementById('calcBtn').addEventListener('click', calculate);
+
+renderChips();
+loadState();
+updateTotal();
+</script>
+</body>
+</html>
