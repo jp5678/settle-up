@@ -266,6 +266,17 @@
     white-space:pre-wrap;word-break:break-all;
     margin-bottom:12px;
   }
+  .img-btn{
+    width:100%;padding:13px;border-radius:14px;border:1.5px solid var(--gold);
+    background:rgba(212,175,55,.12);color:var(--gold-light);
+    font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;
+    margin-bottom:10px;
+    transition:transform .08s,background .2s,color .2s;
+  }
+  .img-btn:active{transform:scale(.97);}
+  .img-btn.done{background:var(--gold);color:#1a1206;}
+  .img-btn:disabled{opacity:.6;cursor:default;}
+
   .copy-btn{
     width:100%;padding:13px;border-radius:14px;border:1.5px solid var(--neon-green);
     background:rgba(46,204,113,.12);color:var(--neon-green);
@@ -514,11 +525,37 @@ function calculate(){
         <div class="row-stack"><span class="k">불참 (${absentees.length}명)</span><span class="v absent">${absentText}</span></div>
       </div>
       <div class="share-box" id="shareBox">${shareText.replace(/</g,'&lt;')}</div>
+      <button class="img-btn" id="imgBtn">🖼️ 카카오톡 공유 이미지 복사</button>
       <button class="copy-btn" id="copyBtn">📋 카카오톡 공유 텍스트 복사</button>
     </div>`;
 
   document.getElementById('copyBtn').addEventListener('click', e => {
     copyShare(shareText, e.currentTarget);
+  });
+
+  document.getElementById('imgBtn').addEventListener('click', async e => {
+    const b = e.currentTarget;
+    const orig = b.textContent;
+    b.disabled = true;
+    b.textContent = '🖼️ 이미지 생성 중…';
+    try{ if(document.fonts && document.fonts.ready) await document.fonts.ready; }catch(_){}
+    let canvas;
+    try{
+      canvas = buildSettlementCanvas({
+        date: todayStr(),
+        perPerson: fmt(perPerson),
+        remNote,
+        total: fmt(total) + '원',
+        n: n + '명',
+        collected: fmt(collected) + '원',
+        attendCount: attendees.length,
+        absentCount: absentees.length,
+        attendText, absentText, account
+      });
+    }catch(err){ b.textContent = orig; b.disabled = false; return; }
+    b.textContent = orig;
+    await copyImage(canvas, b);
+    b.disabled = false;
   });
 
   saveState();
@@ -544,6 +581,132 @@ function fallbackCopy(text, done){
   document.body.appendChild(ta); ta.select();
   try{ document.execCommand('copy'); done(); }catch(e){}
   document.body.removeChild(ta);
+}
+
+/* ════════ 정산서 이미지 생성 (canvas) ════════ */
+function buildSettlementCanvas(d){
+  const scale = 2, W = 420, pad = 30, cw = W - pad*2;
+  const F = {
+    brand:'800 30px Pretendard,"Apple SD Gothic Neo",sans-serif',
+    sub:'500 14px Pretendard,sans-serif',
+    label:'500 15px Pretendard,sans-serif',
+    big:'800 56px Pretendard,sans-serif',
+    note:'600 13px Pretendard,sans-serif',
+    key:'700 15px Pretendard,sans-serif',
+    val:'700 15px Pretendard,sans-serif',
+    names:'600 14px Pretendard,sans-serif',
+    foot:'700 11px Pretendard,sans-serif'
+  };
+  const mc = document.createElement('canvas').getContext('2d');
+  const wrapNames = (t,maxW) => {
+    mc.font = F.names; const ps = t.split(', '); const L = []; let c = '';
+    for(const p of ps){ const t2 = c ? c+', '+p : p;
+      if(mc.measureText(t2).width > maxW && c){ L.push(c); c = p; } else c = t2; }
+    if(c) L.push(c); return L.length ? L : ['없음'];
+  };
+  const wrapChars = (t,maxW) => {
+    mc.font = F.names; const L = []; let c = '';
+    for(const ch of t){ const t2 = c+ch;
+      if(mc.measureText(t2).width > maxW && c){ L.push(c); c = ch; } else c = t2; }
+    if(c) L.push(c); return L.length ? L : [''];
+  };
+
+  const attendL  = wrapNames(d.attendText, cw);
+  const absentL  = wrapNames(d.absentText, cw);
+  const accountL = wrapChars(d.account, cw);
+
+  function layout(ctx, draw){
+    let y = 30; const cx = W/2;
+    const line  = yy => { if(draw){ ctx.strokeStyle='rgba(212,175,55,.28)'; ctx.lineWidth=1;
+                          ctx.beginPath(); ctx.moveTo(pad,yy); ctx.lineTo(W-pad,yy); ctx.stroke(); } };
+    const ctext = (t,f,c,yy) => { if(draw){ ctx.textAlign='center'; ctx.fillStyle=c; ctx.font=f; ctx.fillText(t,cx,yy); } };
+    const ltext = (t,f,c,yy) => { if(draw){ ctx.textAlign='left';   ctx.fillStyle=c; ctx.font=f; ctx.fillText(t,pad,yy); } };
+    const rtext = (t,f,c,yy) => { if(draw){ ctx.textAlign='right';  ctx.fillStyle=c; ctx.font=f; ctx.fillText(t,W-pad,yy); } };
+
+    ctext('THE BRIDGE', F.brand, '#d4af37', y); y += 38;
+    ctext('오늘의 더치페이 · ' + d.date, F.sub, '#9fb0a8', y); y += 30;
+    line(y); y += 20;
+    ctext('1인당 부담액', F.label, '#aebcb4', y); y += 26;
+    ctext(d.perPerson + '원', F.big, '#f1d592', y); y += 64;
+    ctext(d.remNote, F.note, '#ffd700', y); y += 30;
+    line(y); y += 16;
+    const row = (k,v) => { ltext(k,F.key,'#9fb0a8',y); rtext(v,F.val,'#f0f0f0',y); y += 28; };
+    row('총 지출액', d.total);
+    row('참석 인원', d.n);
+    row('실수금 합계', d.collected);
+    y += 4; line(y); y += 16;
+    ltext('참석 (' + d.attendCount + '명)', F.key, '#2ecc71', y); y += 24;
+    for(const l of attendL){ ltext(l, F.names, '#8fe0b0', y); y += 21; }
+    y += 8;
+    ltext('불참 (' + d.absentCount + '명)', F.key, '#ff6a5e', y); y += 24;
+    for(const l of absentL){ ltext(l, F.names, '#cf8a84', y); y += 21; }
+    y += 8; line(y); y += 16;
+    ltext('입금계좌', F.key, '#aebcb4', y); y += 24;
+    for(const l of accountL){ ltext(l, F.names, '#cfd8d2', y); y += 21; }
+    y += 14; line(y); y += 18;
+    ctext('© 2025 THE BRIDGE BILLIARDS CLUB', F.foot, 'rgba(212,175,55,.65)', y); y += 22;
+    return y + 18;
+  }
+
+  const H = Math.ceil(layout(mc, false));
+  const canvas = document.createElement('canvas');
+  canvas.width = W*scale; canvas.height = H*scale;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(scale, scale);
+  ctx.textBaseline = 'top';
+
+  const g = ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,'#141c18'); g.addColorStop(1,'#080c0a');
+  ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+
+  ctx.strokeStyle = '#d4af37'; ctx.lineWidth = 2;
+  if(ctx.roundRect){ ctx.beginPath(); ctx.roundRect(4,4,W-8,H-8,18); ctx.stroke(); }
+  else ctx.strokeRect(4,4,W-8,H-8);
+
+  layout(ctx, true);
+  return canvas;
+}
+
+function flashBtn(btn, msg){
+  const orig = btn.dataset.orig || btn.textContent;
+  btn.dataset.orig = orig;
+  btn.classList.add('done');
+  btn.textContent = msg;
+  setTimeout(() => { btn.classList.remove('done'); btn.textContent = orig; delete btn.dataset.orig; }, 1900);
+}
+
+/* 이미지를 클립보드 복사 → (모바일) 공유 시트 → 다운로드 순으로 시도 */
+function copyImage(canvas, btn){
+  return new Promise(resolve => {
+    canvas.toBlob(async blob => {
+      if(!blob){ resolve(); return; }
+      // 1) 클립보드 이미지 복사
+      try{
+        if(navigator.clipboard && window.ClipboardItem){
+          await navigator.clipboard.write([new ClipboardItem({'image/png': blob})]);
+          flashBtn(btn, '✓ 이미지가 복사되었습니다');
+          resolve(); return;
+        }
+      }catch(e){ /* 폴백으로 진행 */ }
+      // 2) 모바일 공유 시트 (카카오톡 직접 공유 가능)
+      try{
+        const file = new File([blob], 'bridge_dutchpay.png', {type:'image/png'});
+        if(navigator.canShare && navigator.canShare({files:[file]})){
+          try{ await navigator.share({files:[file], title:'더 브릿지 더치페이'}); }
+          catch(err){ /* 사용자가 취소 */ }
+          resolve(); return;
+        }
+      }catch(e){ /* 폴백으로 진행 */ }
+      // 3) 이미지 파일 다운로드
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'bridge_dutchpay.png';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      flashBtn(btn, '✓ 이미지가 저장되었습니다');
+      resolve();
+    }, 'image/png');
+  });
 }
 
 /* ════════ 초기화 ════════ */
