@@ -288,24 +288,24 @@
     margin-bottom:12px;
   }
   .img-btn{
-    width:100%;padding:13px;border-radius:14px;border:1.5px solid var(--gold);
-    background:rgba(212,175,55,.12);color:var(--gold-light);
+    width:100%;padding:13px;border-radius:14px;border:1.5px solid var(--neon-green);
+    background:rgba(46,204,113,.12);color:var(--neon-green);
     font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;
     margin-bottom:10px;
     transition:transform .08s,background .2s,color .2s;
   }
   .img-btn:active{transform:scale(.97);}
-  .img-btn.done{background:var(--gold);color:#1a1206;}
+  .img-btn.done{background:var(--neon-green);color:#04140b;}
   .img-btn:disabled{opacity:.6;cursor:default;}
 
   .copy-btn{
-    width:100%;padding:13px;border-radius:14px;border:1.5px solid var(--gold);
-    background:rgba(212,175,55,.12);color:var(--gold-light);
+    width:100%;padding:13px;border-radius:14px;border:1.5px solid var(--neon-green);
+    background:rgba(46,204,113,.12);color:var(--neon-green);
     font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;
     transition:transform .08s,background .2s,color .2s;
   }
   .copy-btn:active{transform:scale(.97);}
-  .copy-btn.done{background:var(--gold);color:#1a1206;}
+  .copy-btn.done{background:var(--neon-green);color:#04140b;}
 
   .warn{
     text-align:center;color:var(--red);font-size:14px;font-weight:700;
@@ -475,11 +475,9 @@ function saveState(){
 function loadState(){
   let data = null;
   try{ data = JSON.parse(localStorage.getItem(LS_KEY)); }catch(e){}
-  if(data && Array.isArray(data.expenses) && data.expenses.length){
-    data.expenses.forEach(e => addExpenseRow(e.name, e.amount));
-  }else{
-    DEFAULT_ITEMS.forEach(n => addExpenseRow(n, ''));
-  }
+  // 지출 항목은 방문할 때마다 항상 기본값으로 초기화
+  DEFAULT_ITEMS.forEach(n => addExpenseRow(n, ''));
+  // 입금 계좌는 이전 입력값 유지
   if(data && typeof data.account === 'string') accountInput.value = data.account;
 }
 accountInput.addEventListener('input', saveState);
