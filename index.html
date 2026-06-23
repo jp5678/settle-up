@@ -41,7 +41,7 @@
   /* ── HEADER ───────────────────────────── */
   header{
     text-align:center;
-    padding:30px 0 14px;
+    padding:30px 0 28px;
   }
   .location{
     font-size:11px;
@@ -72,61 +72,6 @@
     text-transform:uppercase;
   }
   .subtitle b{color:var(--gold-light);font-weight:700;}
-
-  /* ── BILLIARD TABLE (static decoration) ─── */
-  .table-container{
-    margin:18px auto 26px;
-    position:relative;
-    width:100%;
-    aspect-ratio:2/1;
-    border-radius:18px;
-    background:
-      linear-gradient(160deg,#103f33,var(--felt-green) 60%,#072a22);
-    border:7px solid #5a3d1f;
-    box-shadow:
-      0 0 0 3px #2a1d0e,
-      inset 0 0 40px rgba(0,0,0,.55),
-      0 14px 40px rgba(0,0,0,.6);
-    overflow:hidden;
-  }
-  .table-container::before{
-    /* felt sheen */
-    content:"";
-    position:absolute;inset:0;
-    background:radial-gradient(ellipse at 50% 0%,rgba(255,255,255,.06),transparent 60%);
-  }
-  .pocket{
-    position:absolute;width:18px;height:18px;border-radius:50%;
-    background:radial-gradient(circle at 30% 30%,#222,#000);
-    box-shadow:inset 0 0 4px #000;
-  }
-  .pocket.tl{top:6px;left:6px}.pocket.tr{top:6px;right:6px}
-  .pocket.bl{bottom:6px;left:6px}.pocket.br{bottom:6px;right:6px}
-  .pocket.tm{top:4px;left:50%;transform:translateX(-50%)}
-  .pocket.bm{bottom:4px;left:50%;transform:translateX(-50%)}
-  .ball{
-    position:absolute;width:22px;height:22px;border-radius:50%;
-    box-shadow:inset -4px -5px 7px rgba(0,0,0,.55),0 3px 6px rgba(0,0,0,.5);
-  }
-  .ball::after{
-    content:"";position:absolute;top:3px;left:5px;width:7px;height:6px;
-    border-radius:50%;background:rgba(255,255,255,.55);
-  }
-  .ball.white{background:radial-gradient(circle at 35% 30%,#fff,#cfcfcf);
-    top:52%;left:24%}
-  .ball.red{background:radial-gradient(circle at 35% 30%,#ff6a5e,var(--red));
-    top:40%;left:55%}
-  .ball.yellow{background:radial-gradient(circle at 35% 30%,#fff07a,var(--yellow));
-    top:60%;left:68%}
-  .cue-line{
-    position:absolute;top:52%;left:24%;width:46%;height:2px;
-    transform:translateY(8px) rotate(-9deg);transform-origin:left center;
-    background:linear-gradient(90deg,rgba(212,175,55,0),rgba(212,175,55,.6));
-  }
-  .table-label{
-    position:absolute;bottom:8px;left:50%;transform:translateX(-50%);
-    font-size:10px;letter-spacing:3px;color:rgba(241,213,146,.5);font-weight:700;
-  }
 
   /* ── SECTIONS ─────────────────────────── */
   section{margin-bottom:28px;}
@@ -306,8 +251,11 @@
   .stat-rows .k{color:#9fb0a8;}
   .stat-rows .v{font-weight:800;color:#f0f0f0;
     font-family:"JetBrains Mono","SF Mono",ui-monospace,monospace;}
+  .stat-rows .v.attend{font-family:inherit;color:#8fe0b0;font-weight:700;
+    text-align:right;max-width:62%;line-height:1.5;}
   .stat-rows .v.absent{font-family:inherit;color:#cf8a84;font-weight:700;
-    text-align:right;max-width:62%;}
+    text-align:right;max-width:62%;line-height:1.5;}
+  .stat-rows .row-stack{align-items:flex-start;}
 
   .share-box{
     background:rgba(0,0,0,.4);
@@ -348,20 +296,8 @@
   <header>
     <div class="location">GWANGJU, SOUTH KOREA</div>
     <h1 class="brand">THE BRIDGE</h1>
-    <div class="subtitle">Settlement / <b>오늘의 정산</b></div>
+    <div class="subtitle"><b>오늘의 더치페이(Dutch Pay)</b></div>
   </header>
-
-  <!-- 분위기용 정적 당구대 -->
-  <div class="table-container" aria-hidden="true">
-    <div class="pocket tl"></div><div class="pocket tr"></div>
-    <div class="pocket tm"></div><div class="pocket bm"></div>
-    <div class="pocket bl"></div><div class="pocket br"></div>
-    <div class="cue-line"></div>
-    <div class="ball white"></div>
-    <div class="ball red"></div>
-    <div class="ball yellow"></div>
-    <div class="table-label">3-CUSHION</div>
-  </div>
 
   <!-- ① 참석자 선택 -->
   <section>
@@ -410,7 +346,7 @@ const members = ["백사6000","려리","kbh5111","발칸VULCAN","지교","무등
                  "입석대","케이574","그렌다이저","SMG","도유나가즈아","메롱상태"];
 
 /* 기본 지출 항목 */
-const DEFAULT_ITEMS = ["게임비","식대","음료·주류"];
+const DEFAULT_ITEMS = ["게임비","식사비"];
 
 /* ════════ 상태 ════════ */
 const attendance = {};               // name -> true(참석)/false(불참)
@@ -548,6 +484,7 @@ function calculate(){
 
   const absentees = getAbsentees();
   const absentText = absentees.length ? absentees.join(', ') : '없음';
+  const attendText = attendees.length ? attendees.join(', ') : '없음';
   const account = accountInput.value.trim() || '(미입력)';
 
   let remNote = '딱 나누어떨어집니다 (잔돈 0원)';
@@ -557,8 +494,9 @@ function calculate(){
     remNote = `1인당 반올림으로 ${fmt(-remainder)}원 모자랍니다 (총 ${fmt(remainder)}원)`;
 
   const shareText =
-`🎱 더 브릿지 정산 (${todayStr()})
+`🎱 더 브릿지 더치페이 (${todayStr()})
 총 지출: ${fmt(total)}원 / 참석 ${n}명 / 1인당: ${fmt(perPerson)}원
+참석: ${attendText}
 불참: ${absentText}
 입금계좌: ${account}`;
 
@@ -572,7 +510,8 @@ function calculate(){
         <div><span class="k">총 지출액</span><span class="v">${fmt(total)}원</span></div>
         <div><span class="k">참석 인원</span><span class="v">${n}명</span></div>
         <div><span class="k">실수금 합계</span><span class="v">${fmt(collected)}원</span></div>
-        <div><span class="k">불참 (${absentees.length}명)</span><span class="v absent">${absentText}</span></div>
+        <div class="row-stack"><span class="k">참석 (${attendees.length}명)</span><span class="v attend">${attendText}</span></div>
+        <div class="row-stack"><span class="k">불참 (${absentees.length}명)</span><span class="v absent">${absentText}</span></div>
       </div>
       <div class="share-box" id="shareBox">${shareText.replace(/</g,'&lt;')}</div>
       <button class="copy-btn" id="copyBtn">📋 카카오톡 공유 텍스트 복사</button>
