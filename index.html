@@ -230,13 +230,14 @@
     text-align:center;
     font-family:"JetBrains Mono","SF Mono",ui-monospace,Menlo,Consolas,monospace;
     font-size:clamp(44px,15vw,62px);font-weight:900;
-    background:linear-gradient(180deg,var(--gold-light),var(--gold));
+    background:linear-gradient(180deg,#9bf5c2,var(--neon-green));
     -webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 0 10px rgba(46,204,113,.55));
     line-height:1.05;
     margin:2px 0 4px;
   }
-  .per-person small{font-size:.4em;font-weight:700;color:var(--gold);
-    -webkit-text-fill-color:var(--gold);}
+  .per-person small{font-size:.4em;font-weight:700;color:var(--neon-green);
+    -webkit-text-fill-color:var(--neon-green);}
   .remainder-note{
     text-align:center;font-size:12px;color:var(--yellow);margin-bottom:18px;
   }
@@ -251,11 +252,31 @@
   .stat-rows .k{color:#9fb0a8;}
   .stat-rows .v{font-weight:800;color:#f0f0f0;
     font-family:"JetBrains Mono","SF Mono",ui-monospace,monospace;}
-  .stat-rows .v.attend{font-family:inherit;color:#8fe0b0;font-weight:700;
+  .v.attend{font-family:inherit;color:#8fe0b0;font-weight:700;
     text-align:right;max-width:62%;line-height:1.5;}
-  .stat-rows .v.absent{font-family:inherit;color:#cf8a84;font-weight:700;
+  .v.absent{font-family:inherit;color:#cf8a84;font-weight:700;
     text-align:right;max-width:62%;line-height:1.5;}
-  .stat-rows .row-stack{align-items:flex-start;}
+  .row-stack{align-items:flex-start;}
+
+  /* 눈에 띄는 입금계좌 강조 박스 */
+  .pay-account{
+    display:flex;justify-content:space-between;align-items:center;gap:12px;
+    background:rgba(255,215,0,.12);
+    border:1.5px solid var(--yellow);
+    border-radius:14px;
+    padding:13px 16px;
+    margin:6px 0 4px;
+  }
+  .pay-account .pa-label{font-size:13px;color:#e8dca0;font-weight:800;
+    letter-spacing:1px;flex:0 0 auto;}
+  .pay-account .pa-value{font-size:14px;font-weight:800;color:var(--yellow);
+    text-align:right;word-break:break-all;line-height:1.45;}
+
+  /* 한 줄 띄운 참석/불참 명단 */
+  .roster-lists{margin-top:18px;}
+  .roster-lists > div{display:flex;justify-content:space-between;
+    align-items:flex-start;font-size:14px;padding:5px 0;}
+  .roster-lists .k{color:#9fb0a8;font-weight:700;}
 
   .share-box{
     background:rgba(0,0,0,.4);
@@ -373,6 +394,7 @@ const resultArea  = document.getElementById('resultArea');
 
 /* ════════ 유틸 ════════ */
 const fmt = n => n.toLocaleString('ko-KR');           // 천 단위 콤마
+const esc = s => String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 const onlyDigits = s => (s.replace(/[^\d]/g,'') || '');
 const parseAmt = s => parseInt(onlyDigits(s) || '0', 10);
 
@@ -517,10 +539,16 @@ function calculate(){
       <div class="per-person-label">1인당 부담액</div>
       <div class="per-person">${fmt(perPerson)}<small>원</small></div>
       <div class="remainder-note">${remNote}</div>
+      <div class="pay-account">
+        <span class="pa-label">입금계좌</span>
+        <span class="pa-value">${esc(account)}</span>
+      </div>
       <div class="stat-rows">
         <div><span class="k">총 지출액</span><span class="v">${fmt(total)}원</span></div>
         <div><span class="k">참석 인원</span><span class="v">${n}명</span></div>
         <div><span class="k">실수금 합계</span><span class="v">${fmt(collected)}원</span></div>
+      </div>
+      <div class="roster-lists">
         <div class="row-stack"><span class="k">참석 (${attendees.length}명)</span><span class="v attend">${attendText}</span></div>
         <div class="row-stack"><span class="k">불참 (${absentees.length}명)</span><span class="v absent">${absentText}</span></div>
       </div>
@@ -613,7 +641,7 @@ function buildSettlementCanvas(d){
 
   const attendL  = wrapNames(d.attendText, cw);
   const absentL  = wrapNames(d.absentText, cw);
-  const accountL = wrapChars(d.account, cw);
+  const accountL = wrapChars(d.account, cw - 28);
 
   function layout(ctx, draw){
     let y = 30; const cx = W/2;
@@ -627,23 +655,39 @@ function buildSettlementCanvas(d){
     ctext('오늘의 더치페이 · ' + d.date, F.sub, '#9fb0a8', y); y += 30;
     line(y); y += 20;
     ctext('1인당 부담액', F.label, '#aebcb4', y); y += 26;
-    ctext(d.perPerson + '원', F.big, '#f1d592', y); y += 64;
+    ctext(d.perPerson + '원', F.big, '#4fe08a', y); y += 64;   // 눈에 띄는 네온그린
     ctext(d.remNote, F.note, '#ffd700', y); y += 30;
+
+    // 눈에 띄는 입금계좌 강조 박스 (명단 위쪽)
+    const accH = 12 + 22 + accountL.length*21 + 8;
+    if(draw){
+      ctx.fillStyle = 'rgba(255,215,0,.12)';
+      ctx.strokeStyle = '#ffd700'; ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      if(ctx.roundRect) ctx.roundRect(pad, y, cw, accH, 12); else ctx.rect(pad, y, cw, accH);
+      ctx.fill(); ctx.stroke();
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#e8dca0'; ctx.font = F.key; ctx.fillText('입금계좌', pad+14, y+12);
+      ctx.fillStyle = '#ffd700'; ctx.font = F.val;
+      let ay = y + 34;
+      for(const l of accountL){ ctx.fillText(l, pad+14, ay); ay += 21; }
+    }
+    y += accH + 16;
     line(y); y += 16;
+
     const row = (k,v) => { ltext(k,F.key,'#9fb0a8',y); rtext(v,F.val,'#f0f0f0',y); y += 28; };
     row('총 지출액', d.total);
     row('참석 인원', d.n);
     row('실수금 합계', d.collected);
-    y += 4; line(y); y += 16;
+
+    y += 16;   // 한 줄 띄움
     ltext('참석 (' + d.attendCount + '명)', F.key, '#2ecc71', y); y += 24;
     for(const l of attendL){ ltext(l, F.names, '#8fe0b0', y); y += 21; }
-    y += 8;
+    y += 10;
     ltext('불참 (' + d.absentCount + '명)', F.key, '#ff6a5e', y); y += 24;
     for(const l of absentL){ ltext(l, F.names, '#cf8a84', y); y += 21; }
-    y += 8; line(y); y += 16;
-    ltext('입금계좌', F.key, '#aebcb4', y); y += 24;
-    for(const l of accountL){ ltext(l, F.names, '#cfd8d2', y); y += 21; }
-    y += 14; line(y); y += 18;
+
+    y += 12; line(y); y += 16;
     ctext('© 2025 THE BRIDGE BILLIARDS CLUB', F.foot, 'rgba(212,175,55,.65)', y); y += 22;
     return y + 18;
   }
