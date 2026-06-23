@@ -509,11 +509,11 @@ function calculate(){
     return;
   }
 
-  // 1인당 = 총지출 ÷ 참석자 수 (반올림, 정수 원)
-  const perPerson = Math.round(total / n);
-  // 잔여 차액: 실제 수금(perPerson×n) - 총지출
+  // 1인당 = 총지출 ÷ 참석자 수 (정수 원, 올림 → 실수금이 총지출보다 적지 않도록)
+  const perPerson = Math.ceil(total / n);
+  // 잔여 차액: 실제 수금(perPerson×n) - 총지출 (항상 0 이상)
   const collected = perPerson * n;
-  const remainder = collected - total;   // +면 초과 수금, -면 부족
+  const remainder = collected - total;   // 올림 정산으로 발생하는 초과 수금
 
   const absentees = getAbsentees();
   const absentText = absentees.length ? absentees.join(', ') : '없음';
@@ -522,9 +522,7 @@ function calculate(){
 
   let remNote = '딱 나누어떨어집니다 (잔돈 0원)';
   if(remainder > 0)
-    remNote = `1인당 반올림으로 ${fmt(remainder)}원 더 걷힙니다 (총 +${fmt(remainder)}원)`;
-  else if(remainder < 0)
-    remNote = `1인당 반올림으로 ${fmt(-remainder)}원 모자랍니다 (총 ${fmt(remainder)}원)`;
+    remNote = `1인당 올림 정산으로 ${fmt(remainder)}원 더 걷힙니다 (총 +${fmt(remainder)}원)`;
 
   const shareText =
 `🎱 더 브릿지 더치페이 (${todayStr()})
