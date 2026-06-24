@@ -519,23 +519,31 @@ function addExpenseRow(name='', amount=''){
 
   let receiptUrl = null;
 
+  const applyReceipt = (url) => {
+    receiptUrl = url;
+    row._receiptUrl = url;          // 공유 이미지 생성 시 참조
+    if(url){
+      receiptBtn.classList.add('has-img');
+      receiptBtn.innerHTML = '<img class="receipt-thumb" alt="영수증">';
+      receiptBtn.querySelector('img').src = url;
+      receiptBtn.title = '영수증 보기';
+    }else{
+      receiptBtn.classList.remove('has-img');
+      receiptBtn.innerHTML = RECEIPT_ICON;
+      receiptBtn.title = '영수증 첨부';
+    }
+  };
+
   const clearReceipt = () => {
     if(receiptUrl) URL.revokeObjectURL(receiptUrl);
-    receiptUrl = null;
-    receiptBtn.classList.remove('has-img');
-    receiptBtn.innerHTML = RECEIPT_ICON;
-    receiptBtn.title = '영수증 첨부';
+    applyReceipt(null);
   };
 
   fileInput.addEventListener('change', () => {
     const f = fileInput.files && fileInput.files[0];
     if(!f) return;
     if(receiptUrl) URL.revokeObjectURL(receiptUrl);
-    receiptUrl = URL.createObjectURL(f);
-    receiptBtn.classList.add('has-img');
-    receiptBtn.innerHTML = '<img class="receipt-thumb" alt="영수증">';
-    receiptBtn.querySelector('img').src = receiptUrl;
-    receiptBtn.title = '영수증 보기';
+    applyReceipt(URL.createObjectURL(f));
     fileInput.value = '';
   });
 
@@ -584,6 +592,22 @@ function getExpenses(){
 }
 function getTotal(){ return getExpenses().reduce((s,e)=>s+e.amount,0); }
 function updateTotal(){ totalAmt.textContent = fmt(getTotal()) + '원'; }
+
+/* 첨부된 영수증(항목명 + 이미지) 수집 */
+function getReceipts(){
+  return [...expenseList.querySelectorAll('.expense-row')]
+    .map(r => ({ name: (r.querySelector('.item-name').value.trim() || '영수증'), url: r._receiptUrl }))
+    .filter(r => r.url);
+}
+/* 영수증 이미지를 캔버스에 그릴 수 있도록 미리 로드 */
+function loadReceiptImages(items){
+  return Promise.all(items.map(it => new Promise(resolve => {
+    const img = new Image();
+    img.onload  = () => resolve({ name: it.name, img });
+    img.onerror = () => resolve(null);
+    img.src = it.url;
+  }))).then(a => a.filter(Boolean));
+}
 
 /* ════════ localStorage ════════ */
 const LS_KEY = 'bridge_settlement_v1';
@@ -692,6 +716,7 @@ function calculate(){
     try{ if(document.fonts && document.fonts.ready) await document.fonts.ready; }catch(_){}
     let canvas;
     try{
+      const receipts = await loadReceiptImages(getReceipts());
       canvas = buildSettlementCanvas({
         date: todayStr(),
         perPerson: fmt(perPerson),
@@ -701,7 +726,7 @@ function calculate(){
         collected: fmt(collected) + '원',
         attendCount: attendees.length,
         absentCount: absentees.length,
-        attendText, absentText, account
+        attendText, absentText, account, receipts
       });
     }catch(err){ b.textContent = orig; b.disabled = false; return; }
     b.textContent = orig;
@@ -761,6 +786,37 @@ function buildSettlementCanvas(d){
   const absentL  = wrapNames(d.absentText, cw);
   const accountL = wrapChars(d.account, cw - 28);
 
+  // 영수증 썸네일 레이아웃
+  const receipts = d.receipts || [];
+  const RcCols = receipts.length <= 1 ? 1 : (receipts.length === 2 ? 2 : 3);
+  const RcGap  = 10;
+  const RcW    = Math.floor((cw - RcGap*(RcCols-1)) / RcCols);
+  const RcImgH = RcCols === 1 ? 150 : (RcCols === 2 ? 120 : 96);
+  const RcCellH = RcImgH + 4 + 16;          // 이미지 + 항목명
+  const RcRows = Math.ceil(receipts.length / RcCols);
+
+  const drawThumb = (ctx, rc, x, cy) => {
+    const iw = rc.img.naturalWidth || rc.img.width || 1;
+    const ih = rc.img.naturalHeight || rc.img.height || 1;
+    const s = Math.min(RcW/iw, RcImgH/ih);
+    const dw = iw*s, dh = ih*s;
+    const dx = x + (RcW-dw)/2, dy = cy + (RcImgH-dh)/2;
+    ctx.save();
+    ctx.beginPath();
+    if(ctx.roundRect) ctx.roundRect(x, cy, RcW, RcImgH, 8); else ctx.rect(x, cy, RcW, RcImgH);
+    ctx.fillStyle = 'rgba(0,0,0,.4)'; ctx.fill();
+    ctx.clip();
+    ctx.drawImage(rc.img, dx, dy, dw, dh);
+    ctx.restore();
+    ctx.beginPath();
+    if(ctx.roundRect) ctx.roundRect(x, cy, RcW, RcImgH, 8); else ctx.rect(x, cy, RcW, RcImgH);
+    ctx.strokeStyle = 'rgba(212,175,55,.45)'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.textAlign = 'center'; ctx.fillStyle = '#9fb0a8'; ctx.font = F.foot;
+    let nm = rc.name || '영수증';
+    while(ctx.measureText(nm).width > RcW - 4 && nm.length > 1){ nm = nm.slice(0, -1); }
+    ctx.fillText(nm, x + RcW/2, cy + RcImgH + 5);
+  };
+
   function layout(ctx, draw){
     let y = 30; const cx = W/2;
     const line  = yy => { if(draw){ ctx.strokeStyle='rgba(212,175,55,.28)'; ctx.lineWidth=1;
@@ -805,7 +861,21 @@ function buildSettlementCanvas(d){
     ltext('불참 (' + d.absentCount + '명)', F.key, '#ff6a5e', y); y += 24;
     for(const l of absentL){ ltext(l, F.names, '#cf8a84', y); y += 21; }
 
-    y += 12; line(y); y += 16;
+    // 영수증 썸네일 (맨 아래)
+    if(receipts.length){
+      y += 14; line(y); y += 16;
+      ltext('영수증 (' + receipts.length + '장)', F.key, '#aebcb4', y); y += 26;
+      const startY = y;
+      receipts.forEach((rc, i) => {
+        const col = i % RcCols, ri = Math.floor(i / RcCols);
+        const x = pad + col*(RcW + RcGap);
+        const cy = startY + ri*(RcCellH + 12);
+        if(draw) drawThumb(ctx, rc, x, cy);
+      });
+      y = startY + RcRows*RcCellH + (RcRows - 1)*12;
+    }
+
+    y += 14; line(y); y += 16;
     ctext('© 2025 THE BRIDGE BILLIARDS CLUB', F.foot, 'rgba(212,175,55,.65)', y); y += 22;
     return y + 18;
   }
