@@ -158,6 +158,51 @@
   }
   .del-btn:active{transform:scale(.9);}
 
+  /* 영수증 첨부 버튼 */
+  .receipt-btn{
+    flex:0 0 auto;
+    display:inline-flex;align-items:center;justify-content:center;
+    width:34px;height:34px;border-radius:10px;border:none;
+    background:rgba(212,175,55,.12);color:var(--gold-light);
+    cursor:pointer;padding:0;overflow:hidden;
+    transition:transform .08s,background .18s;
+  }
+  .receipt-btn:active{transform:scale(.9);}
+  .receipt-btn.has-img{background:rgba(46,204,113,.18);}
+  .receipt-thumb{width:100%;height:100%;object-fit:cover;border-radius:10px;display:block;}
+
+  /* 영수증 미리보기 라이트박스 */
+  .lightbox{
+    position:fixed;inset:0;z-index:100;
+    background:rgba(0,0,0,.85);
+    display:flex;align-items:center;justify-content:center;
+    padding:24px;
+    animation:cardAppear .25s ease;
+  }
+  .lightbox-inner{
+    max-width:100%;max-height:100%;
+    display:flex;flex-direction:column;align-items:center;gap:16px;
+  }
+  .lightbox-inner img{
+    max-width:100%;max-height:70vh;border-radius:12px;
+    border:2px solid var(--gold);box-shadow:0 10px 40px rgba(0,0,0,.6);
+    object-fit:contain;
+  }
+  .lightbox-actions{display:flex;gap:10px;}
+  .lightbox-actions button{
+    padding:11px 18px;border-radius:12px;font-family:inherit;
+    font-size:14px;font-weight:800;cursor:pointer;
+    border:1.5px solid;transition:transform .08s;
+  }
+  .lightbox-actions button:active{transform:scale(.96);}
+  .lb-replace{border-color:var(--gold);background:rgba(212,175,55,.12);color:var(--gold-light);}
+  .lb-delete{border-color:var(--red);background:rgba(255,59,48,.12);color:var(--red);}
+  .lightbox-close{
+    position:absolute;top:16px;right:16px;
+    width:42px;height:42px;border-radius:50%;border:none;
+    background:rgba(255,255,255,.12);color:#fff;font-size:24px;line-height:1;cursor:pointer;
+  }
+
   .add-btn{
     width:100%;margin-top:4px;
     padding:11px;border-radius:12px;
@@ -395,6 +440,7 @@ const DEFAULT_ITEMS = ["게임비","식사비"];
 /* 복사 버튼 아이콘 */
 const COPY_ICON = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
 const CHECK_ICON = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+const RECEIPT_ICON = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>';
 
 /* ════════ 상태 ════════ */
 const attendance = {};               // name -> true(참석)/false(불참)
@@ -459,14 +505,75 @@ function addExpenseRow(name='', amount=''){
 
   nameInput.addEventListener('input', saveState);
 
+  // 영수증 이미지 첨부
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.accept = 'image/*';
+  fileInput.style.display = 'none';
+
+  const receiptBtn = document.createElement('button');
+  receiptBtn.type = 'button';
+  receiptBtn.className = 'receipt-btn';
+  receiptBtn.title = '영수증 첨부';
+  receiptBtn.innerHTML = RECEIPT_ICON;
+
+  let receiptUrl = null;
+
+  const clearReceipt = () => {
+    if(receiptUrl) URL.revokeObjectURL(receiptUrl);
+    receiptUrl = null;
+    receiptBtn.classList.remove('has-img');
+    receiptBtn.innerHTML = RECEIPT_ICON;
+    receiptBtn.title = '영수증 첨부';
+  };
+
+  fileInput.addEventListener('change', () => {
+    const f = fileInput.files && fileInput.files[0];
+    if(!f) return;
+    if(receiptUrl) URL.revokeObjectURL(receiptUrl);
+    receiptUrl = URL.createObjectURL(f);
+    receiptBtn.classList.add('has-img');
+    receiptBtn.innerHTML = '<img class="receipt-thumb" alt="영수증">';
+    receiptBtn.querySelector('img').src = receiptUrl;
+    receiptBtn.title = '영수증 보기';
+    fileInput.value = '';
+  });
+
+  receiptBtn.addEventListener('click', () => {
+    if(receiptUrl) openReceipt(receiptUrl, clearReceipt, () => fileInput.click());
+    else fileInput.click();
+  });
+
   const del = document.createElement('button');
   del.className = 'del-btn';
   del.type = 'button';
   del.innerHTML = '&times;';
-  del.addEventListener('click', () => { row.remove(); updateTotal(); saveState(); });
+  del.addEventListener('click', () => { if(receiptUrl) URL.revokeObjectURL(receiptUrl); row.remove(); updateTotal(); saveState(); });
 
-  row.append(nameInput, amtInput, del);
+  row.append(nameInput, amtInput, receiptBtn, fileInput, del);
   expenseList.appendChild(row);
+}
+
+/* 영수증 미리보기 라이트박스 */
+function openReceipt(url, onDelete, onReplace){
+  const ov = document.createElement('div');
+  ov.className = 'lightbox';
+  ov.innerHTML =
+    '<button type="button" class="lightbox-close" aria-label="닫기">&times;</button>' +
+    '<div class="lightbox-inner">' +
+      '<img alt="영수증">' +
+      '<div class="lightbox-actions">' +
+        '<button type="button" class="lb-replace">다른 이미지</button>' +
+        '<button type="button" class="lb-delete">영수증 삭제</button>' +
+      '</div>' +
+    '</div>';
+  ov.querySelector('img').src = url;
+  const close = () => ov.remove();
+  ov.addEventListener('click', e => { if(e.target === ov) close(); });
+  ov.querySelector('.lightbox-close').addEventListener('click', close);
+  ov.querySelector('.lb-replace').addEventListener('click', () => { close(); onReplace(); });
+  ov.querySelector('.lb-delete').addEventListener('click', () => { close(); onDelete(); });
+  document.body.appendChild(ov);
 }
 
 function getExpenses(){
