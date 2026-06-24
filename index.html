@@ -766,6 +766,7 @@ function buildSettlementCanvas(d){
     key:'700 15px Pretendard,sans-serif',
     val:'700 15px Pretendard,sans-serif',
     names:'400 14px Pretendard,sans-serif',
+    rlabel:'400 15px Pretendard,sans-serif',
     foot:'700 11px Pretendard,sans-serif'
   };
   const mc = document.createElement('canvas').getContext('2d');
@@ -855,10 +856,10 @@ function buildSettlementCanvas(d){
     row('실수금 합계', d.collected);
 
     y += 16;   // 한 줄 띄움
-    ltext('참석 (' + d.attendCount + '명)', F.key, '#2ecc71', y); y += 24;
+    ltext('참석 (' + d.attendCount + '명)', F.rlabel, '#2ecc71', y); y += 24;
     for(const l of attendL){ ltext(l, F.names, '#8fe0b0', y); y += 21; }
     y += 10;
-    ltext('불참 (' + d.absentCount + '명)', F.key, '#ff6a5e', y); y += 24;
+    ltext('불참 (' + d.absentCount + '명)', F.rlabel, '#ff6a5e', y); y += 24;
     for(const l of absentL){ ltext(l, F.names, '#cf8a84', y); y += 21; }
 
     // 영수증 썸네일 (맨 아래)
