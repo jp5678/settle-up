@@ -270,7 +270,18 @@
   .pay-account .pa-label{font-size:13px;color:#e8dca0;font-weight:800;
     letter-spacing:1px;flex:0 0 auto;}
   .pay-account .pa-value{font-size:14px;font-weight:800;color:var(--yellow);
-    text-align:right;word-break:break-all;line-height:1.45;}
+    text-align:right;word-break:break-all;line-height:1.45;flex:1;}
+  .acc-copy{
+    flex:0 0 auto;
+    width:32px;height:32px;border-radius:9px;
+    border:1px solid var(--yellow);
+    background:rgba(255,215,0,.15);
+    color:var(--yellow);
+    font-size:14px;line-height:1;cursor:pointer;
+    transition:transform .08s,background .2s,color .2s;
+  }
+  .acc-copy:active{transform:scale(.9);}
+  .acc-copy.done{background:var(--yellow);color:#1a1206;}
 
   /* 한 줄 띄운 참석/불참 명단 */
   .roster-lists{margin-top:18px;}
@@ -537,7 +548,8 @@ function calculate(){
       <div class="remainder-note">${remNote}</div>
       <div class="pay-account">
         <span class="pa-label">입금계좌</span>
-        <span class="pa-value">${esc(account)}</span>
+        <span class="pa-value" id="accValue">${esc(account)}</span>
+        <button class="acc-copy" id="accCopyBtn" type="button" aria-label="계좌 복사">📋</button>
       </div>
       <div class="stat-rows">
         <div><span class="k">총 지출액</span><span class="v">${fmt(total)}원</span></div>
@@ -551,6 +563,14 @@ function calculate(){
       <div class="share-box" id="shareBox">${shareText.replace(/</g,'&lt;')}</div>
       <button class="img-btn" id="imgBtn">🖼️ 카카오톡 공유 이미지 복사</button>
     </div>`;
+
+  const accCopyBtn = document.getElementById('accCopyBtn');
+  accCopyBtn.addEventListener('click', async () => {
+    await copyPlainText(account);
+    accCopyBtn.classList.add('done');
+    accCopyBtn.textContent = '✓';
+    setTimeout(() => { accCopyBtn.classList.remove('done'); accCopyBtn.textContent = '📋'; }, 1500);
+  });
 
   document.getElementById('imgBtn').addEventListener('click', async e => {
     const b = e.currentTarget;
@@ -579,6 +599,22 @@ function calculate(){
 
   saveState();
   resultArea.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+/* 일반 텍스트 클립보드 복사 */
+async function copyPlainText(text){
+  try{
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      await navigator.clipboard.writeText(text); return true;
+    }
+  }catch(e){ /* 폴백 */ }
+  try{
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+    return true;
+  }catch(e){ return false; }
 }
 
 /* ════════ 정산서 이미지 생성 (canvas) ════════ */
