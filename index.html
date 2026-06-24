@@ -352,15 +352,6 @@
     overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
   }
 
-  .share-box{
-    background:rgba(0,0,0,.4);
-    border:1px solid rgba(212,175,55,.25);
-    border-radius:12px;
-    padding:13px 14px;
-    font-size:12.5px;line-height:1.7;color:#cfd8d2;
-    white-space:pre-wrap;word-break:break-all;text-align:center;
-    margin-bottom:12px;
-  }
   .img-btn{
     width:100%;padding:13px;border-radius:14px;border:1.5px solid var(--neon-green);
     background:rgba(46,204,113,.12);color:var(--yellow);
@@ -685,12 +676,6 @@ function calculate(){
   if(remainder > 0)
     remNote = `1인당 올림 정산으로 ${fmt(remainder)}원 더 걷힙니다 (총 +${fmt(remainder)}원)`;
 
-  const shareText =
-`🎱 더 브릿지 더치페이 (${todayStr()})
-총 지출: ${fmt(total)}원 / 참석 ${n}명 / 1인당: ${fmt(perPerson)}원
-참석: ${attendText}
-불참: ${absentText}
-입금계좌: ${account}`;
 
   // 첨부된 영수증 썸네일 갤러리 (있을 때만)
   const cardReceiptList = getReceipts();
@@ -723,7 +708,6 @@ function calculate(){
         <div class="row-stack"><span class="k">불참 (${absentees.length}명)</span><span class="v absent">${absentText}</span></div>
       </div>
       ${cardReceipts}
-      <div class="share-box" id="shareBox">${shareText.split('\n')[0].replace(/</g,'&lt;')}</div>
       <button class="img-btn" id="imgBtn">🖼️ 카카오톡 공유 이미지 복사</button>
     </div>`;
 
