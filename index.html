@@ -252,9 +252,9 @@
   .stat-rows .k{color:#9fb0a8;}
   .stat-rows .v{font-weight:800;color:#f0f0f0;
     font-family:"JetBrains Mono","SF Mono",ui-monospace,monospace;}
-  .v.attend{font-family:inherit;color:#8fe0b0;font-weight:700;
+  .v.attend{font-family:inherit;color:#8fe0b0;font-weight:400;
     text-align:right;max-width:62%;line-height:1.5;}
-  .v.absent{font-family:inherit;color:#cf8a84;font-weight:700;
+  .v.absent{font-family:inherit;color:#cf8a84;font-weight:400;
     text-align:right;max-width:62%;line-height:1.5;}
   .row-stack{align-items:flex-start;}
 
@@ -550,12 +550,7 @@ function calculate(){
       </div>
       <div class="share-box" id="shareBox">${shareText.replace(/</g,'&lt;')}</div>
       <button class="img-btn" id="imgBtn">🖼️ 카카오톡 공유 이미지 복사</button>
-      <button class="copy-btn" id="copyBtn">📋 카카오톡 공유 텍스트 복사</button>
     </div>`;
-
-  document.getElementById('copyBtn').addEventListener('click', e => {
-    copyShare(shareText, e.currentTarget);
-  });
 
   document.getElementById('imgBtn').addEventListener('click', async e => {
     const b = e.currentTarget;
@@ -586,27 +581,6 @@ function calculate(){
   resultArea.scrollIntoView({behavior:'smooth',block:'start'});
 }
 
-function copyShare(text, btn){
-  const done = () => {
-    btn.classList.add('done');
-    const orig = btn.textContent;
-    btn.textContent = '✓ 복사되었습니다';
-    setTimeout(()=>{ btn.classList.remove('done'); btn.textContent = orig; }, 1800);
-  };
-  if(navigator.clipboard && navigator.clipboard.writeText){
-    navigator.clipboard.writeText(text).then(done).catch(()=>fallbackCopy(text,done));
-  }else{
-    fallbackCopy(text, done);
-  }
-}
-function fallbackCopy(text, done){
-  const ta = document.createElement('textarea');
-  ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
-  document.body.appendChild(ta); ta.select();
-  try{ document.execCommand('copy'); done(); }catch(e){}
-  document.body.removeChild(ta);
-}
-
 /* ════════ 정산서 이미지 생성 (canvas) ════════ */
 function buildSettlementCanvas(d){
   const scale = 2, W = 420, pad = 30, cw = W - pad*2;
@@ -618,7 +592,7 @@ function buildSettlementCanvas(d){
     note:'600 13px Pretendard,sans-serif',
     key:'700 15px Pretendard,sans-serif',
     val:'700 15px Pretendard,sans-serif',
-    names:'600 14px Pretendard,sans-serif',
+    names:'400 14px Pretendard,sans-serif',
     foot:'700 11px Pretendard,sans-serif'
   };
   const mc = document.createElement('canvas').getContext('2d');
