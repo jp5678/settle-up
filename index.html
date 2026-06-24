@@ -273,11 +273,12 @@
     text-align:right;word-break:break-all;line-height:1.45;flex:1;}
   .acc-copy{
     flex:0 0 auto;
+    display:inline-flex;align-items:center;justify-content:center;
     width:32px;height:32px;border-radius:9px;
-    border:1px solid var(--yellow);
-    background:rgba(255,215,0,.15);
+    border:none;
+    background:transparent;
     color:var(--yellow);
-    font-size:14px;line-height:1;cursor:pointer;
+    cursor:pointer;padding:0;
     transition:transform .08s,background .2s,color .2s;
   }
   .acc-copy:active{transform:scale(.9);}
@@ -390,6 +391,10 @@ const members = ["백사6000","려리","kbh5111","발칸VULCAN","지교","무등
 
 /* 기본 지출 항목 */
 const DEFAULT_ITEMS = ["게임비","식사비"];
+
+/* 복사 버튼 아이콘 */
+const COPY_ICON = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
+const CHECK_ICON = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
 
 /* ════════ 상태 ════════ */
 const attendance = {};               // name -> true(참석)/false(불참)
@@ -549,7 +554,7 @@ function calculate(){
       <div class="pay-account">
         <span class="pa-label">입금계좌</span>
         <span class="pa-value" id="accValue">${esc(account)}</span>
-        <button class="acc-copy" id="accCopyBtn" type="button" aria-label="계좌 복사">📋</button>
+        <button class="acc-copy" id="accCopyBtn" type="button" aria-label="계좌 복사">${COPY_ICON}</button>
       </div>
       <div class="stat-rows">
         <div><span class="k">총 지출액</span><span class="v">${fmt(total)}원</span></div>
@@ -568,8 +573,8 @@ function calculate(){
   accCopyBtn.addEventListener('click', async () => {
     await copyPlainText(account);
     accCopyBtn.classList.add('done');
-    accCopyBtn.textContent = '✓';
-    setTimeout(() => { accCopyBtn.classList.remove('done'); accCopyBtn.textContent = '📋'; }, 1500);
+    accCopyBtn.innerHTML = CHECK_ICON;
+    setTimeout(() => { accCopyBtn.classList.remove('done'); accCopyBtn.innerHTML = COPY_ICON; }, 1500);
   });
 
   document.getElementById('imgBtn').addEventListener('click', async e => {
